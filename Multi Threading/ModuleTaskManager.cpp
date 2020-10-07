@@ -1,5 +1,7 @@
 #include "ModuleTaskManager.h"
 
+//DONE BY ALBERT CAYUELA AND ERIC NAVARRO
+
 using namespace std;
 
 void ModuleTaskManager::threadMain()
