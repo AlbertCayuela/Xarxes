@@ -43,7 +43,8 @@ void client(const char *serverAddrStr, int port)
 		
 		printWSErrorAndExit("WSAStartup");
 		return;
-	}
+	}
+
 	
 	SOCKET s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s == INVALID_SOCKET)
@@ -75,7 +76,8 @@ void client(const char *serverAddrStr, int port)
 
 		sockaddr_in fromAddr;
 		int fromSize = sizeof(fromAddr);
-		iResult = recvfrom(s, buf, bufSize, 0, (sockaddr*)&fromAddr, &fromSize);		if (iResult == SOCKET_ERROR)
+		iResult = recvfrom(s, buf, bufSize, 0, (sockaddr*)&fromAddr, &fromSize);
+		if (iResult == SOCKET_ERROR)
 		{
 			printWSErrorAndExit("recvfrom");
 			break;

@@ -83,7 +83,7 @@ void server(int port)
 
 		std::cout << buf << std::endl;
 
-		memcpy(&buf, "ping", bufSize);
+		memcpy(&buf, "pong", bufSize);
 
 		iResult = sendto(s, buf, bufSize, 0, (sockaddr*)&fromAddr, fromSize);
 		if (iResult == SOCKET_ERROR)
