@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{aa5c35ed-b424-46a2-9d8c-b3448aa39060}</ProjectGuid>
+    <ProjectGuid>{f0f18323-8f64-474e-8a53-7cb6af55a1d9}</ProjectGuid>
     <RootNamespace>Sockets</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>UDP Client</ProjectName>
+    <ProjectName>UDPClient</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

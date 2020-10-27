@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main() 
+int main()
 {
 	printf("HELLO, THIS IS THE UDP CLIENT!!\n");
 
