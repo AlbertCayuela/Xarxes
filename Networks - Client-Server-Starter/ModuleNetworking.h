@@ -28,8 +28,7 @@ private:
 	virtual void onSocketReceivedData(SOCKET s, byte * data) = 0;
 
 	virtual void onSocketDisconnected(SOCKET s) = 0;
-	
-	void Disconnection(SOCKET disconnect);
+
 
 
 

@@ -84,7 +84,7 @@ bool ModuleNetworking::preUpdate()
 
 	if (select(0, &readSet, nullptr, nullptr, &timeout) == SOCKET_ERROR)
 	{
-		printWSErrorAndExit("select");
+		printWSErrorAndExit("Select");
 		
 		return false;
 	}
@@ -98,38 +98,56 @@ bool ModuleNetworking::preUpdate()
 	// connected socket to the managed list of sockets.
 	// On recv() success, communicate the incoming data received to the
 	// subclass (use the callback onSocketReceivedData()).
+	
 	for (int i = 0; i < readSet.fd_count; ++i) {
-		SOCKET auxSocket = readSet.fd_array[i];
+		SOCKET Socket = readSet.fd_array[i];
 
-		if (isListenSocket(auxSocket)) {
-			sockaddr_in sockAddr;
-			int addrSize = sizeof(sockAddr);
+		if (isListenSocket(Socket)) {
+			sockaddr_in socket_address;
+			int addrSize = sizeof(socket_address);
 
-			SOCKET connectedSocket = accept(auxSocket, (sockaddr*)&sockAddr, &addrSize);
+			SOCKET c_socket = accept(Socket, (sockaddr*)&socket_address, &addrSize);
 
-			if (connectedSocket == INVALID_SOCKET) {
-				reportError("Oops, the accept function in failed");
+			if (c_socket == INVALID_SOCKET) {
+				reportError("Failed!");
 				return false;
 			}
 
-			onSocketConnected(connectedSocket, sockAddr);
-			addSocket(connectedSocket);
+			onSocketConnected(c_socket, socket_address);
+			addSocket(c_socket);
 		}
 		else {
-			int receiving = recv(auxSocket, (char*)incomingDataBuffer, incomingDataBufferSize, 0);
+			int receiving = recv(Socket, (char*)incomingDataBuffer, incomingDataBufferSize, 0);
 
 			if (receiving == SOCKET_ERROR) {
-				//Here the client disconnects
-				Disconnection(auxSocket);
+				
+				onSocketDisconnected(Socket);
+
+				for (std::vector<SOCKET>::iterator it = sockets.begin(); it != sockets.end(); ++it)
+				{
+					if ((*it) == Socket)
+					{
+						sockets.erase(it);
+						break;
+					}
+				}
 
 			}
-			else if (receiving == 0 || receiving == ECONNRESET) {
-				//Here the server disconnects
-				Disconnection(auxSocket);
+			else if (receiving == 0) {
+				
+				onSocketDisconnected(Socket);
+
+				for (std::vector<SOCKET>::iterator it = sockets.begin(); it != sockets.end(); ++it)
+				{
+					if ((*it) == Socket)
+					{
+						sockets.erase(it);
+						break;
+					}
+				}
 			}
 			else {
-				//This is the case where the receiving succeds
-				onSocketReceivedData(auxSocket, incomingDataBuffer);
+				onSocketReceivedData(Socket, incomingDataBuffer);
 			}
 		}
 	}
@@ -167,19 +185,4 @@ bool ModuleNetworking::cleanUp()
 void ModuleNetworking::addSocket(SOCKET socket)
 {
 	sockets.push_back(socket);
-}
-
-
-void ModuleNetworking::Disconnection(SOCKET disconnect)
-{
-	onSocketDisconnected(disconnect);
-
-	for (std::vector<SOCKET>::iterator it = sockets.begin(); it != sockets.end(); ++it)
-	{
-		if ((*it) == disconnect)
-		{
-			sockets.erase(it);
-			break;
-		}
-	}
 }

@@ -7,25 +7,29 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 
 	// TODO(jesus): TCP connection stuff
 	// - Create the socket
+	// - Create the remote address object
+	// - Connect to the remote address
+	// - Add the created socket to the managed list of sockets using addSocket()
+	// If everything was ok... change the state
+
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s == INVALID_SOCKET) {
 		reportError("socket");
 		return false;
 	}
-	// - Create the remote address object
+	
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(serverPort);
 	const char* remoteAddrStr = serverAddressStr;
 	inet_pton(AF_INET, remoteAddrStr, &serverAddress.sin_addr);
-	// - Connect to the remote address
+	
 	if (connect(s, (sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
 		reportError("connect");
 		return false;
 	}
 
-	// - Add the created socket to the managed list of sockets using addSocket()
 	addSocket(s);
-	// If everything was ok... change the state
+	
 	state = ClientState::Start;
 
 	return true;
