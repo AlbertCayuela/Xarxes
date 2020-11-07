@@ -112,14 +112,14 @@ bool ModuleNetworking::preUpdate()
 	// subclass (use the callback onSocketReceivedData()).
 	std::list<SOCKET> dis_sockets;
 
-	for (auto s : sockets) {
+	for (SOCKET i : sockets) {
 
-		if (FD_ISSET(s, &readSet)) {
-			if (isListenSocket(s)) {
+		if (FD_ISSET(i, &readSet)) {
+			if (isListenSocket(i)) {
 				sockaddr_in socket_address;
 					int addrSize = sizeof(socket_address);
 
-					SOCKET c_socket = accept(s, (sockaddr*)&socket_address, &addrSize);
+					SOCKET c_socket = accept(i, (sockaddr*)&socket_address, &addrSize);
 
 					if (c_socket == INVALID_SOCKET)
 					{
@@ -134,19 +134,19 @@ bool ModuleNetworking::preUpdate()
 			}
 			else {
 				InputMemoryStream packet;
-				int receiving = recv(s, packet.GetBufferPtr(), packet.GetCapacity(), 0);
+				int receiving = recv(i, packet.GetBufferPtr(), packet.GetCapacity(), 0);
 
 				if (receiving == SOCKET_ERROR)
 				{
 					reportError("recv");
-					dis_sockets.push_back(s);
+					dis_sockets.push_back(i);
 				}
 				else if (receiving == 0) {
-					dis_sockets.push_back(s);
+					dis_sockets.push_back(i);
 				}
 				else {
 					packet.SetSize(receiving);
-					onSocketReceivedData(s, packet);
+					onSocketReceivedData(i, packet);
 				}
 			}
 		}
@@ -162,10 +162,10 @@ bool ModuleNetworking::preUpdate()
 	// TODO(jesus): Finally, remove all disconnected sockets from the list
 	// of managed sockets.
 
-	for (const auto& s : dis_sockets) 
+	for (const SOCKET& j : dis_sockets) 
 	{
-		onSocketDisconnected(s);
-		sockets.erase(std::find(sockets.begin(), sockets.end(), s));
+		onSocketDisconnected(j);
+		sockets.erase(std::find(sockets.begin(), sockets.end(), j));
 	}
 
 	return true;
