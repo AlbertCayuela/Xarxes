@@ -44,12 +44,20 @@ bool ModuleNetworkingClient::update()
 {
 	if (state == ClientState::Start)
 	{
-		// TODO(jesus): Send the player name to the server
-		if (send(s, playerName.c_str(), sizeof(playerName), 0) == SOCKET_ERROR) {
-			reportError("send");
+		OutputMemoryStream packet;
+		packet << ClientMessage::Hello;
+		packet << playerName;
+		if (sendPacket(packet, s))
+		{
+			state = ClientState::Logging;
+		}
+		else
+		{
+			disconnect();
+			state = ClientState::Stopped;
 		}
 
-		state = ClientState::Logging;
+		
 	}
 
 	return true;
@@ -67,22 +75,121 @@ bool ModuleNetworkingClient::gui()
 		ImGui::Image(tex->shaderResource, texSize);
 
 		ImGui::Text("%s connected to the server...", playerName.c_str());
-
 		//Printing port and server adress of client
 		char str[INET_ADDRSTRLEN];
 
 		inet_ntop(AF_INET, &(serverAddress.sin_addr), str, INET_ADDRSTRLEN);
 
 		ImGui::Text("port %i, addr %s", serverAddress.sin_port, str);
+		if (ImGui::Button("Logout"))
+		{
+			disconnect();
+			state = ClientState::Stopped;
+		}
+
+		ImGui::Spacing();
+		ImGui::BeginChild("Scroll", ImVec2(400, 450), true);
+		for (const auto& message : m_messages)
+		{
+			ImGui::TextColored(message.m_color, "%s", message.m_message.c_str());
+		}
+		ImGui::EndChild();
+		static char text[256] = "";
+		if (ImGui::InputText("Line", text, IM_ARRAYSIZE(text), ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			OutputMemoryStream packet;
+			packet << ClientMessage::Chat;
+			packet << text;
+
+			if (!sendPacket(packet, s))
+			{
+				disconnect();
+				state = ClientState::Stopped;
+			}
+
+			strcpy_s(text, 256, "");
+		}
+
 		ImGui::End();
 	}
-
 	return true;
 }
 
-void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, byte * data)
+void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, const InputMemoryStream& packet)
 {
-	state = ClientState::Stopped;
+	ServerMessage serverMessage;
+	packet >> serverMessage;
+
+	switch (serverMessage)
+	{
+	case ServerMessage::Welcome:
+	{
+		std::string message;
+		ImVec4 color;
+		packet >> message;
+		packet >> color.x;
+		packet >> color.y;
+		packet >> color.z;
+		packet >> color.w;
+
+		packet >> m_playerColor.x;
+		packet >> m_playerColor.y;
+		packet >> m_playerColor.z;
+		packet >> m_playerColor.w;
+
+		m_messages.push_back(Message(message, color));
+
+		break;
+	}
+
+	case ServerMessage::Chat:
+	case ServerMessage::ClientConnected:
+	case ServerMessage::ClientDisconnected:
+	case ServerMessage::Help:
+	case ServerMessage::List:
+	case ServerMessage::Whisper:
+	{
+		std::string message;
+		ImVec4 color;
+		packet >> message;
+		packet >> color.x;
+		packet >> color.y;
+		packet >> color.z;
+		packet >> color.w;
+
+		m_messages.push_back(Message(message, color));
+
+		break;
+	}
+
+	case ServerMessage::NonWelcome:
+	{
+		std::string newPlayerName;
+		packet >> newPlayerName;
+
+		LOG("The player name %s already exists", newPlayerName.c_str());
+	}
+
+	case ServerMessage::Disconnect:
+	{
+		disconnect();
+		state = ClientState::Stopped;
+
+		break;
+	}
+
+	case ServerMessage::ChangeName:
+	{
+		packet >> playerName;
+
+		break;
+	}
+
+	default:
+	{
+		break;
+	}
+	}
 }
 
 void ModuleNetworkingClient::onSocketDisconnected(SOCKET socket)

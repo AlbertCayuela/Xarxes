@@ -2,6 +2,7 @@
 
 #include "ModuleNetworking.h"
 
+#include <list>
 class ModuleNetworkingClient : public ModuleNetworking
 {
 public:
@@ -32,7 +33,7 @@ private:
 	// ModuleNetworking virtual methods
 	//////////////////////////////////////////////////////////////////////
 
-	void onSocketReceivedData(SOCKET socket, byte * data) override;
+	void onSocketReceivedData(SOCKET socket, const InputMemoryStream& packet) override;
 
 	void onSocketDisconnected(SOCKET socket) override;
 
@@ -48,6 +49,19 @@ private:
 		Start,
 		Logging
 	};
+	struct Message {
+		Message() {}
+		Message(std::string message, ImVec4 color) : m_message(message), m_color(color) {}
+		Message(const Message& message)
+		{
+			m_message = message.m_message;
+			m_color = message.m_color;
+		}
+		~Message() {}
+
+		std::string m_message;
+		ImVec4 m_color;
+	};
 
 	ClientState state = ClientState::Stopped;
 
@@ -55,5 +69,8 @@ private:
 	SOCKET s = INVALID_SOCKET;
 
 	std::string playerName;
+	ImVec4 m_playerColor;
+
+	std::list<Message> m_messages;
 };
 
