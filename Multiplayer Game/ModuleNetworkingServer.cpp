@@ -146,6 +146,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 					GameObject *gameObject = networkGameObjects[i];
 					
 					// TODO(you): World state replication lab session
+					proxy->replicationManager.Create(gameObject->networkId);
 				}
 
 				LOG("Message received: hello - from player %s", proxy->name.c_str());
@@ -217,6 +218,7 @@ void ModuleNetworkingServer::onUpdate()
 
 		for (ClientProxy &clientProxy : clientProxies)
 		{
+			
 			if (clientProxy.connected)
 			{
 				// TODO(you): UDP virtual connection lab session
@@ -236,6 +238,11 @@ void ModuleNetworkingServer::onUpdate()
 				}
 
 				// TODO(you): World state replication lab session
+				OutputMemoryStream packet;
+				packet << PROTOCOL_ID;
+				packet << ServerMessage::Replicate;
+				clientProxy.replicationManager.Write(packet);
+				sendPacket(packet, clientProxy.address);
 
 				// TODO(you): Reliability on top of UDP lab session
 				if (lastPing >= PING_INTERVAL_SECONDS) {
@@ -396,6 +403,7 @@ void ModuleNetworkingServer::updateNetworkObject(GameObject * gameObject)
 		if (clientProxies[i].connected)
 		{
 			// TODO(you): World state replication lab session
+			clientProxies[i].replicationManager.Update(gameObject->networkId);
 		}
 	}
 }

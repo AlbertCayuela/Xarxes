@@ -54,6 +54,7 @@ private:
 		float lastPacket = 0.0f;
 		// TODO(you): World state replication lab session
 		float secLastReplication = 0.0f;
+		ReplicationManagerServer replicationManager;
 		// TODO(you): Reliability on top of UDP lab session
 
 		uint32 nextExpectedInputSequenceNumber = 0;

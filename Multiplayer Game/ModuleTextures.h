@@ -8,6 +8,7 @@ struct Texture
 	const char *filename = "";
 	vec2 size = vec2{ -1.0f };
 	bool used = false;
+	int id = -1;
 };
 
 class ModuleTextures : public Module

@@ -95,6 +95,7 @@ private:
 	//////////////////////////////////////////////////////////////////////
 
 	// TODO(you): World state replication lab session
+	ReplicationManagerClient repClient;
 
 
 
