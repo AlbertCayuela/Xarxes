@@ -34,7 +34,7 @@ void ReplicationManagerServer::Destroy(uint32 networkId)
 	}
 }
 
-void ReplicationManagerServer::Write(OutputMemoryStream& packet) 
+void ReplicationManagerServer::write(OutputMemoryStream& packet) 
 {
 	for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
 	{
@@ -58,9 +58,9 @@ void ReplicationManagerServer::Write(OutputMemoryStream& packet)
 			//packet << game_object->behaviour; 
 			if (game_object->sprite != nullptr && game_object->sprite->texture != nullptr) {
 				packet << game_object->sprite->texture->id;
-				packet.Write(game_object->sprite->color);
+				//packet.Write(game_object->sprite->color);
 				packet << game_object->sprite->order;
-				packet.Write(game_object->sprite->pivot);
+				//packet.Write(game_object->sprite->pivot);
 			}
 			else {
 				packet << -1;

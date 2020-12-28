@@ -241,7 +241,7 @@ void ModuleNetworkingServer::onUpdate()
 				OutputMemoryStream packet;
 				packet << PROTOCOL_ID;
 				packet << ServerMessage::Replicate;
-				clientProxy.replicationManager.Write(packet);
+				clientProxy.replicationManager.write(packet);
 				sendPacket(packet, clientProxy.address);
 
 				// TODO(you): Reliability on top of UDP lab session
