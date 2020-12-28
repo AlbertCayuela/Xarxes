@@ -28,6 +28,10 @@ void Laser::update()
 		if (secondsSinceCreation >= lifetimeSeconds) {
 			NetworkDestroy(gameObject);
 		}
+		else
+		{
+			NetworkUpdate(gameObject);
+		}
 	}
 }
 
