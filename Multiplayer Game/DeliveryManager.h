@@ -40,6 +40,6 @@ private:
 	uint32 nextOutgoingSequenceNumber = 0u;
 	std::list<Delivery*> pendingDeliveries;
 
-	uint32 nextIncomningSeqNumber = 0u;
+	uint32 nextExpectedSequenceNumber = 0u;
 	std::list<uint32> pendingAcknowledges;
 };

@@ -5,12 +5,35 @@
 
 Delivery* DeliveryManager::writeSequenceNumber(OutputMemoryStream& packet)
 {
-	return nullptr;
+	packet << nextOutgoingSequenceNumber;
+
+	Delivery* delivery = new Delivery();
+
+	delivery->sequenceNumber = nextOutgoingSequenceNumber++;
+	delivery->dispatchTime = Time.time;
+
+	pendingDeliveries.push_back(delivery);
+
+	return delivery;
 }
 
 bool DeliveryManager::processSequenceNumber(const InputMemoryStream& packet)
 {
-	return false;
+
+	bool ret = false;
+
+	uint32 sequenceNum = 0;
+	packet >> sequenceNum;
+
+	if (sequenceNum == nextExpectedSequenceNumber)
+	{
+		ret = true;
+		nextExpectedSequenceNumber++;
+	}
+
+	pendingAcknowledges.push_back(sequenceNum);
+
+	return ret;
 }
 
 bool DeliveryManager::hasSequenceNumbersPendingAck() const
