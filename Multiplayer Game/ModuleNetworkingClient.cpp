@@ -138,6 +138,7 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 			break;}
 		case ServerMessage::Replicate:{
 			repClient.read(packet);
+			packet >> inputDataFront;
 			break;}
 		}
 	}
@@ -222,7 +223,7 @@ void ModuleNetworkingClient::onUpdate()
 			}
 
 			// Clear the queue
-			inputDataFront = inputDataBack;
+			//inputDataFront = inputDataBack;
 
 			sendPacket(packet, serverAddress);
 		}

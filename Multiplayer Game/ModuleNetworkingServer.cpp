@@ -242,6 +242,7 @@ void ModuleNetworkingServer::onUpdate()
 				packet << PROTOCOL_ID;
 				packet << ServerMessage::Replicate;
 				clientProxy.replicationManager.write(packet);
+				packet << clientProxy.nextExpectedInputSequenceNumber;
 				sendPacket(packet, clientProxy.address);
 
 				// TODO(you): Reliability on top of UDP lab session
@@ -249,6 +250,11 @@ void ModuleNetworkingServer::onUpdate()
 					lastPing = 0.0f;
 				}
 				lastPing += Time.deltaTime;
+
+				if (lastSentRep >= maxDelay) {
+					lastSentRep = 0.0f;
+				}
+				lastSentRep += Time.deltaTime;
 			}
 		}
 	}

@@ -122,7 +122,8 @@ private:
 
 	uint16 listenPort = 0;
 
-
+	float lastSentRep = 0.0f;
+	float maxDelay = 0.5f;
 
 	// TODO(you): UDP virtual connection lab session
 	float lastPing = 0.0f;
