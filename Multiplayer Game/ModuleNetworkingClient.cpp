@@ -135,11 +135,20 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 		{
 		case ServerMessage::Ping: {
 			secLastPacket = 0.0f;
-			break;}
-		case ServerMessage::Replicate:{
-			repClient.read(packet);
+			break;
+		}
+		case ServerMessage::Replicate: {
+			if (delManagerClient.processSequenceNumber(packet))
+				repClient.read(packet);
+			else
+			{
+				//Empty the packet if sequence number out of order
+				char dump;
+				while (packet.RemainingByteCount() > sizeof(uint32)) packet >> dump;
+			}
 			packet >> inputDataFront;
-			break;}
+			break;
+			}
 		}
 	}
 }
@@ -157,6 +166,7 @@ void ModuleNetworkingClient::onUpdate()
 		
 		OutputMemoryStream packet;
 		packet << ClientMessage::Ping;
+		delManagerClient.writeSequenceNumbersPendingAck(packet);
 		sendPacket(packet, serverAddress);
 
 		secLastPing = 0.0f;

@@ -56,6 +56,7 @@ private:
 		float secLastReplication = 0.0f;
 		ReplicationManagerServer replicationManager;
 		// TODO(you): Reliability on top of UDP lab session
+		DeliveryManager delManager;
 
 		uint32 nextExpectedInputSequenceNumber = 0;
 		InputController gamepad;

@@ -191,6 +191,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 
 		// TODO(you): UDP virtual connection lab session
 		else if (message == ClientMessage::Ping) {
+			proxy->delManager.processAckdSequenceNumbers(packet);
 			if (proxy) {
 				proxy->lastPacket = 0.0f;
 			}
@@ -238,25 +239,31 @@ void ModuleNetworkingServer::onUpdate()
 				}
 
 				// TODO(you): World state replication lab session
-				OutputMemoryStream packet;
-				packet << PROTOCOL_ID;
-				packet << ServerMessage::Replicate;
-				clientProxy.replicationManager.write(packet);
-				packet << clientProxy.nextExpectedInputSequenceNumber;
-				sendPacket(packet, clientProxy.address);
-
-				// TODO(you): Reliability on top of UDP lab session
-				if (lastPing >= PING_INTERVAL_SECONDS) {
-					lastPing = 0.0f;
-				}
-				lastPing += Time.deltaTime;
-
 				if (lastSentRep >= maxDelay) {
-					lastSentRep = 0.0f;
+					OutputMemoryStream packet;
+					packet << PROTOCOL_ID;
+					packet << ServerMessage::Replicate;
+					clientProxy.delManager.writeSequenceNumber(packet);
+
+					clientProxy.replicationManager.write(packet);
+					packet << clientProxy.nextExpectedInputSequenceNumber;
+					sendPacket(packet, clientProxy.address);
 				}
-				lastSentRep += Time.deltaTime;
+				clientProxy.delManager.processTimedoutPackets();
+
+				
 			}
 		}
+		// TODO(you): Reliability on top of UDP lab session
+		if (lastPing >= PING_INTERVAL_SECONDS) {
+			lastPing = 0.0f;
+		}
+		lastPing += Time.deltaTime;
+
+		if (lastSentRep >= maxDelay) {
+			lastSentRep = 0.0f;
+		}
+		lastSentRep += Time.deltaTime;
 	}
 }
 
