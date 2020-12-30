@@ -14,7 +14,7 @@ public:
 
 struct Delivery 
 {
-	Delivery(uint32 sequenceNum);
+	
 	~Delivery();
 
 	uint32 sequenceNumber = 0;

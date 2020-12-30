@@ -120,11 +120,20 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 					vec2 initialPosition = 500.0f * vec2{ Random.next() - 0.5f, Random.next() - 0.5f};
 					float initialAngle = 360.0f * Random.next();
 					proxy->gameObject = spawnPlayer(spaceshipType, initialPosition, initialAngle);
+
+					//Replicate objects from other servers
+					GameObject* networkGameObjects[MAX_NETWORK_OBJECTS] = {};
+					uint16 networkObjectsCount;
+					App->modLinkingContext->getNetworkGameObjects(networkGameObjects, &networkObjectsCount);
+
+					for (uint16 i = 0; i < networkObjectsCount; ++i)
+					{
+						if (networkGameObjects[i]->id == proxy->gameObject->id)
+							continue;
+						proxy->replicationManager.Create(networkGameObjects[i]->networkId);
+					}
 				}
-				else
-				{
-					// NOTE(jesus): Server is full...
-				}
+				
 			}
 
 			if (proxy != nullptr)
@@ -137,19 +146,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 				welcomePacket << proxy->gameObject->networkId;
 				sendPacket(welcomePacket, fromAddress);
 
-				// Send all network objects to the new player
-				uint16 networkGameObjectsCount;
-				GameObject *networkGameObjects[MAX_NETWORK_OBJECTS];
-				App->modLinkingContext->getNetworkGameObjects(networkGameObjects, &networkGameObjectsCount);
-				for (uint16 i = 0; i < networkGameObjectsCount; ++i)
-				{
-					GameObject *gameObject = networkGameObjects[i];
-					
-					// TODO(you): World state replication lab session
-					proxy->replicationManager.Create(gameObject->networkId);
-				}
-
-				LOG("Message received: hello - from player %s", proxy->name.c_str());
+				
 			}
 			else
 			{
@@ -430,7 +427,7 @@ void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
 		if (clientProxies[i].connected)
 		{
 			// TODO(you): World state replication lab session
-			clientProxies[i].replicationManager.Destroy(gameObject->networkId);
+			clientProxies[i].replicationManager.destroy(gameObject->networkId);
 		}
 	}
 

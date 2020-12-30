@@ -5,7 +5,7 @@
 
 void ReplicationManagerClient::read(const InputMemoryStream& packet)
 {
-	do 
+	while (packet.RemainingByteCount() > sizeof(uint32)) 
 	{
 		uint32 networkId;
 		ReplicationAction repAction;
@@ -18,8 +18,10 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 		case ReplicationAction::Create:
 		{
 			GameObject* go = Instantiate();
-			CreateGameObject(networkId, packet, go);
-			App->modLinkingContext->registerNetworkGameObjectWithNetworkId(go, networkId);
+			if (go) {
+				CreateGameObject(networkId, packet, go);
+				App->modLinkingContext->registerNetworkGameObjectWithNetworkId(go, networkId);
+			}
 			break;
 		}
 
@@ -46,8 +48,40 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 				go->angle = angle;	
 				go->position = position;
 			}
-		
 			//TODO: WHAT IF GAMEOBJECT DOESNT EXIST?
+			else {
+				LOG("Creating GO inside Update (!!!)");
+				go = Instantiate();
+
+				go->position.x = position.x;
+				go->position.y = position.y;
+				go->angle = angle;
+				go->size = size;
+
+				//Create sprite
+				go->sprite = App->modRender->addSprite(go);
+				go->sprite->order = 5;
+
+				//Put texture
+				
+				if (type == 0) {
+					go->sprite->texture = App->modResources->laser;
+					
+				}
+				else if (type == 1) {
+					go->sprite->texture = App->modResources->spacecraft1;
+					
+				}
+				else if (type == 2) {
+					go->sprite->texture = App->modResources->spacecraft2;
+				}
+				else if (type == 3) {
+					go->sprite->texture = App->modResources->spacecraft3;
+				}
+				
+
+				App->modLinkingContext->registerNetworkGameObjectWithNetworkId(go, networkId);
+			}
 
 			break;
 		}
@@ -69,7 +103,7 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 			//Nothing
 			break;
 		}
-	} while (sizeof(uint32) < packet.RemainingByteCount());
+	}
 }
 
 void ReplicationManagerClient::CreateGameObject(uint32 networkId, const InputMemoryStream& packet, GameObject* go)
@@ -100,10 +134,12 @@ void ReplicationManagerClient::CreateGameObject(uint32 networkId, const InputMem
 
 	if (type != 0) 
 	{
-		go->behaviour = new Spaceship;
-		go->behaviour->gameObject = go;
+		
 		go->collider = App->modCollision->addCollider(ColliderType::Player, go);
 		go->collider->isTrigger = true;
+		go->behaviour = new Spaceship;
+		go->behaviour->gameObject = go;
+
 	}
 	else if (type == 0) 
 	{

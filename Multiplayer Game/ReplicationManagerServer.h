@@ -21,7 +21,7 @@ public:
 
 	void Create(uint32 networkId);
 	void Update(uint32 networkId);
-	void Destroy(uint32 networkId);
+	void destroy(uint32 networkId);
 	void write(OutputMemoryStream &packet);
 
 private:

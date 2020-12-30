@@ -5,89 +5,106 @@
 void ReplicationManagerServer::Create(uint32 networkId) 
 {
 	ReplicationCommand command;
-	command.networkId = networkId;
 	command.action = ReplicationAction::Create;
+	command.networkId = networkId;
+	bool is = false;
+	for (int i = 0; i < commands.size(); i++) {
 
-	commands.push_back(command);
+		if (commands[i].action == command.action && commands[i].networkId == command.networkId)
+		{
+			is = true;
+		}
+			
+	}
+
+	if (!is)
+	{
+		commands.push_back(command);
+	}
 }
 
 void ReplicationManagerServer::Update(uint32 networkId)
 {
-
-	for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
+	ReplicationCommand command;
+	command.action = ReplicationAction::Update;
+	command.networkId = networkId;
+	bool is = false;
+	
+	//for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
+	for (int i = 0; i < commands.size(); i++)
 	{
-		if ((*i).networkId == networkId)
+		if (commands[i].networkId == command.networkId && commands[i].action == command.action)
 		{
-			(*i).action = ReplicationAction::Update;
-			break;
+			is = true;
 		}
+	}
+	if (!is)
+	{
+		commands.push_back(command);
 	}
 }
 
-void ReplicationManagerServer::Destroy(uint32 networkId)
+void ReplicationManagerServer::destroy(uint32 networkId)
 {
-	for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i) 
+	ReplicationCommand command;
+	command.action = ReplicationAction::Destroy;
+	command.networkId = networkId;
+	bool is = false;
+	//for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i) 
+	for (int i = 0; i < commands.size(); i++)
 	{
-		if ((*i).networkId == networkId) 
+		if (commands[i].networkId == command.networkId && commands[i].action == command.action)
 		{
-			(*i).action = ReplicationAction::Destroy;
-			break;
+			is = true;
 		}
+	}
+	if (!is)
+	{
+		commands.push_back(command);
 	}
 }
 
 void ReplicationManagerServer::write(OutputMemoryStream& packet) 
 {
-	for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
+	//for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
+	for (int i = 0; i < commands.size(); i++)
 	{
-		packet << (*i).networkId;
-		packet << (*i).action;
+		packet << commands[i].networkId;
+		packet << commands[i].action;
 
-		GameObject* game_object = App->modLinkingContext->getNetworkGameObject((*i).networkId);
-
-
-		switch ((*i).action)
+		if (commands[i].action == ReplicationAction::Create || commands[i].action == ReplicationAction::Update)
 		{
-		case ReplicationAction::Create:
-		{
-			packet << game_object->position.x;
-			packet << game_object->position.y;
-			packet << game_object->angle;
-			packet << game_object->size.x;
-			packet << game_object->size.y;
-			//packet << game_object->sprite->texture;
-			//packet << game_object->collider;
-			//packet << game_object->behaviour; 
-			if (game_object->sprite != nullptr && game_object->sprite->texture != nullptr) {
-				packet << game_object->sprite->texture->id;
-				//packet.Write(game_object->sprite->color);
-				packet << game_object->sprite->order;
-				//packet.Write(game_object->sprite->pivot);
+		
+			GameObject* game_object = App->modLinkingContext->getNetworkGameObject(commands[i].networkId);
+			if (game_object != nullptr)
+			{
+				packet << game_object->position.x;
+				packet << game_object->position.y;
+				packet << game_object->angle;
+				packet << game_object->size.x;
+				packet << game_object->size.y;
+				
+				if (game_object->sprite->texture == App->modResources->spacecraft1)
+				{
+					packet << (uint8)1;
+				}
+				if (game_object->sprite->texture == App->modResources->spacecraft2)
+				{
+					packet << (uint8)2;
+				}
+				if (game_object->sprite->texture == App->modResources->spacecraft3)
+				{
+					packet << (uint8)3;
+				}
+				else 
+				{
+					packet << (uint8)0;
+				}
 			}
-			else {
-				packet << -1;
-			}
-			if (game_object->animation != nullptr && game_object->animation->clip != nullptr) {
-				packet << 1;
-				packet << game_object->animation->currentFrame;
-				packet << game_object->animation->elapsedTime;
-				packet << game_object->animation->clip->id;
-			}
-			else {
-				packet << -1;
-
-			}
-			break;
-		}
-		case ReplicationAction::Update:
-		{
-			packet << game_object->position.x;
-			packet << game_object->position.y;
-			packet << game_object->angle;
-			break;
-		}
+		
+		
 		}
 
-		(*i).action = ReplicationAction::None;
+		commands.clear();
 	}
 }

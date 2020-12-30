@@ -165,6 +165,7 @@ void ModuleNetworkingClient::onUpdate()
 	if (secLastPing >= PING_INTERVAL_SECONDS) {
 		
 		OutputMemoryStream packet;
+		packet << PROTOCOL_ID;
 		packet << ClientMessage::Ping;
 		delManagerClient.writeSequenceNumbersPendingAck(packet);
 		sendPacket(packet, serverAddress);
@@ -246,10 +247,7 @@ void ModuleNetworkingClient::onUpdate()
 		{
 			App->modRender->cameraPosition = playerGameObject->position;
 		}
-		else
-		{
-			// This means that the player has been destroyed (e.g. killed)
-		}
+		
 	}
 }
 

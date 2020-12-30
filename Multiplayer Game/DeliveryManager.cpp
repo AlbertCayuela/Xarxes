@@ -3,13 +3,6 @@
 
 // TODO(you): Reliability on top of UDP lab session
 
-Delivery::Delivery(uint32 sequenceNum) {
-
-	//this->sequenceNumber = sequenceNum;
-	this->delegate = new DeliveryDelegate();
-	//this->dispatchTime = Time.time;
-}
-
 Delivery::~Delivery()
 {
 	if (delegate != nullptr) {
@@ -22,9 +15,10 @@ Delivery* DeliveryManager::writeSequenceNumber(OutputMemoryStream& packet)
 {
 	packet << nextOutgoingSequenceNumber;
 
-	Delivery* delivery = new Delivery(nextOutgoingSequenceNumber);
+	Delivery* delivery = new Delivery();
 
 	delivery->sequenceNumber = nextOutgoingSequenceNumber++;
+	delivery->delegate = new DeliveryDelegate();
 	delivery->dispatchTime = Time.time;
 
 	pendingDeliveries.push_back(delivery);
@@ -85,11 +79,6 @@ void DeliveryManager::processAckdSequenceNumbers(const InputMemoryStream& packet
 			Delivery* del = *i;
 			if (del->sequenceNumber == sequenceNum)
 			{
-
-				/*if (del->delegate)
-					del->delegate->OnDeliverySuccess(this);*/
-
-				
 				delete del;
 				del = nullptr;
 
