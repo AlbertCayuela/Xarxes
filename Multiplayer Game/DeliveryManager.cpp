@@ -5,9 +5,9 @@
 
 Delivery::Delivery(uint32 sequenceNum) {
 
-	this->sequenceNumber = sequenceNum;
+	//this->sequenceNumber = sequenceNum;
 	this->delegate = new DeliveryDelegate();
-	this->dispatchTime = Time.time;
+	//this->dispatchTime = Time.time;
 }
 
 Delivery::~Delivery()
@@ -24,8 +24,8 @@ Delivery* DeliveryManager::writeSequenceNumber(OutputMemoryStream& packet)
 
 	Delivery* delivery = new Delivery(nextOutgoingSequenceNumber);
 
-	/*delivery->sequenceNumber = nextOutgoingSequenceNumber++;
-	delivery->dispatchTime = Time.time;*/
+	delivery->sequenceNumber = nextOutgoingSequenceNumber++;
+	delivery->dispatchTime = Time.time;
 
 	pendingDeliveries.push_back(delivery);
 
@@ -62,9 +62,9 @@ void DeliveryManager::writeSequenceNumbersPendingAck(OutputMemoryStream& packet)
 
 	packet << numOfAcks;
 
-	for (uint32 sequenceNum : pendingAcknowledges) {
+	for (uint32 sequenceNum : pendingAcknowledges) 
+	{
 		packet << sequenceNum;
-
 	}
 
 	pendingAcknowledges.clear();
@@ -75,30 +75,25 @@ void DeliveryManager::processAckdSequenceNumbers(const InputMemoryStream& packet
 	uint32 numOfAcks;
 	packet >> numOfAcks;
 
-
 	for (int i = 0; i < numOfAcks; ++i)
 	{
-
 		uint32 sequenceNum;
 		packet >> sequenceNum;
 
-		//Look for the sequence numbers on the pending deliveries list
-		for (std::list<Delivery*>::iterator del_it = pendingDeliveries.begin(); del_it != pendingDeliveries.end(); del_it++)
+		for (std::list<Delivery*>::iterator i = pendingDeliveries.begin(); i != pendingDeliveries.end(); i++)
 		{
-
-			Delivery* del = *del_it;
-			//If it exists, success! and delete it from the list
+			Delivery* del = *i;
 			if (del->sequenceNumber == sequenceNum)
 			{
 
-				if (del->delegate)
-					del->delegate->OnDeliverySuccess(this);
+				/*if (del->delegate)
+					del->delegate->OnDeliverySuccess(this);*/
 
 				
 				delete del;
 				del = nullptr;
 
-				pendingDeliveries.erase(del_it);
+				pendingDeliveries.erase(i);
 
 				break;
 			}
@@ -108,29 +103,32 @@ void DeliveryManager::processAckdSequenceNumbers(const InputMemoryStream& packet
 
 void DeliveryManager::processTimedoutPackets()
 {
-	for (std::list<Delivery*>::iterator del_it = pendingDeliveries.begin(); del_it != pendingDeliveries.end();)
+	for (std::list<Delivery*>::iterator i = pendingDeliveries.begin(); i != pendingDeliveries.end();)
 	{
-		Delivery* del = *del_it;
-		if (Time.time - del->dispatchTime >= PACKET_DELIVERY_TIMEOUT_SECONDS)
+		Delivery* delivery = *i;
+		if (Time.time - delivery->dispatchTime >= PACKET_DELIVERY_TIMEOUT_SECONDS)
 		{
-			if (del->delegate)
-				del->delegate->OnDeliveryFailure(this);
-
-			delete del;
-			del = nullptr;
-			del_it = pendingDeliveries.erase(del_it);
+			if (delivery->delegate) 
+			{
+				delivery->delegate->OnDeliveryFailure(this);
+			}
+			
+			delete delivery;
+			delivery = nullptr;
+			i = pendingDeliveries.erase(i);
 		}
-		else {
-			del_it++;
+		else 
+		{
+			i++;
 		}
 	}
 }
 
 void DeliveryManager::clear()
 {
-	for (Delivery* del : pendingDeliveries) {
-
-		delete del;
+	for (Delivery* delivery : pendingDeliveries)
+	{
+		delete delivery;
 	}
 
 	pendingAcknowledges.clear();
@@ -150,5 +148,4 @@ void DeliveryDelegate::OnDeliveryFailure(DeliveryManager* deliveryManager)
 	{
 		NetworkUpdate(networkGOs[i]);
 	}
-
 }

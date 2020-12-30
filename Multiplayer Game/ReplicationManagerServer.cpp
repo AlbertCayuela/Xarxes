@@ -1,6 +1,7 @@
 #include "Networks.h"
 #include "ReplicationManagerServer.h"
 
+
 void ReplicationManagerServer::Create(uint32 networkId) 
 {
 	ReplicationCommand command;
@@ -12,6 +13,7 @@ void ReplicationManagerServer::Create(uint32 networkId)
 
 void ReplicationManagerServer::Update(uint32 networkId)
 {
+
 	for (std::vector<ReplicationCommand>::iterator i = commands.begin(); i != commands.end(); ++i)
 	{
 		if ((*i).networkId == networkId)
