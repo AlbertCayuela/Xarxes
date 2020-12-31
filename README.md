@@ -17,4 +17,18 @@ Type your name in the TextBox, choose between 3 types of spaceships and click in
   - Button A and D to rotate the spaceship.
   - Down Arrow to move forward.
   - Left Arrow to shoot laser.
+  
+# List of Implementations:
 
+Albert Cayuela:
+
+  - Replication Manager
+  - Delivery Manager
+  - Time Replication
+  - Bug Fixing
+  
+Eric Navarro:
+  - Replication Manager
+  - Module Networking Server
+  - Module Networking Client
+  - Delivery Manager
