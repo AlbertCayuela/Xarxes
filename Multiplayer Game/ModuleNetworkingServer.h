@@ -51,10 +51,9 @@ private:
 		GameObject *gameObject = nullptr;
 
 		// TODO(you): UDP virtual connection lab session
-		float lastPacket = 0.0f;
+		float lastPacketTime = 0.0f;
 		// TODO(you): World state replication lab session
-		float secLastReplication = 0.0f;
-		ReplicationManagerServer replicationManager;
+		ReplicationManagerServer repM;
 		// TODO(you): Reliability on top of UDP lab session
 		DeliveryManager delManager;
 
@@ -109,6 +108,7 @@ private:
 
 
 
+
 	//////////////////////////////////////////////////////////////////////
 	// State
 	//////////////////////////////////////////////////////////////////////
@@ -123,11 +123,11 @@ private:
 
 	uint16 listenPort = 0;
 
-	float lastSentRep = 0.0f;
-	float maxDelay = 0.5f;
+	float lastRepl = 0.0f;
+	float replMaxTime = 0.05f;
 
 	// TODO(you): UDP virtual connection lab session
-	float lastPing = 0.0f;
+	float lastPingTime = 0.0f;
 
 };
 

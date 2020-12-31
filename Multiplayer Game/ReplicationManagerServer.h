@@ -1,5 +1,4 @@
-#ifndef _REPLICATIONMANAGERSERVER_
-#define _REPLICATIONMANAGERSERVER_
+#pragma once 
 
 enum class ReplicationAction 
 {
@@ -21,11 +20,10 @@ public:
 
 	void Create(uint32 networkId);
 	void Update(uint32 networkId);
-	void destroy(uint32 networkId);
-	void write(OutputMemoryStream &packet);
+	void Destroy(uint32 networkId);
+	void Write(OutputMemoryStream &packet);
 
 private:
 	std::vector<ReplicationCommand> commands;
 };
 
-#endif

@@ -5,7 +5,7 @@
 
 void ReplicationManagerClient::read(const InputMemoryStream& packet)
 {
-	while (packet.RemainingByteCount() > sizeof(uint32)) 
+	while (packet.RemainingByteCount() > sizeof(uint32)) //Input last sequence number
 	{
 		uint32 networkId;
 		ReplicationAction repAction;
@@ -13,12 +13,12 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 		packet >> networkId;
 		packet >> repAction;
 
-		switch (repAction)
-		{
+		switch (repAction) {
 		case ReplicationAction::Create:
 		{
 			GameObject* go = Instantiate();
-			if (go) {
+			if (go)
+			{
 				CreateGameObject(networkId, packet, go);
 				App->modLinkingContext->registerNetworkGameObjectWithNetworkId(go, networkId);
 			}
@@ -31,12 +31,12 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 			packet >> position.x;
 			packet >> position.y;
 
+			float angle;
+			packet >> angle;
+
 			vec2 size;
 			packet >> size.x;
 			packet >> size.y;
-
-			float angle;
-			packet >> angle;
 
 			uint8 type;
 			packet >> type;
@@ -45,16 +45,15 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 
 			if (go) 
 			{
-				go->angle = angle;	
 				go->position = position;
+				go->angle = angle;
 			}
 			//TODO: WHAT IF GAMEOBJECT DOESNT EXIST?
-			else {
-				LOG("Creating GO inside Update (!!!)");
+			else
+			{
 				go = Instantiate();
 
-				go->position.x = position.x;
-				go->position.y = position.y;
+				go->position = position;
 				go->angle = angle;
 				go->size = size;
 
@@ -63,17 +62,18 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 				go->sprite->order = 5;
 
 				//Put texture
-				
+
 				if (type == 0) {
 					go->sprite->texture = App->modResources->laser;
-					
+
 				}
 				else if (type == 1) {
 					go->sprite->texture = App->modResources->spacecraft1;
-					
+
 				}
 				else if (type == 2) {
 					go->sprite->texture = App->modResources->spacecraft2;
+
 				}
 				else if (type == 3) {
 					go->sprite->texture = App->modResources->spacecraft3;
@@ -98,7 +98,7 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 
 			break;
 		}
-
+		
 		case ReplicationAction::None:
 			//Nothing
 			break;
@@ -108,40 +108,44 @@ void ReplicationManagerClient::read(const InputMemoryStream& packet)
 
 void ReplicationManagerClient::CreateGameObject(uint32 networkId, const InputMemoryStream& packet, GameObject* go)
 {
-
 	//TODO: Fill
-
 	uint8 type;
 
 	packet >> go->position.x;
 	packet >> go->position.y;
+	packet >> go->angle;
 	packet >> go->size.x;
 	packet >> go->size.y;
-	packet >> go->angle;
 	packet >> type;
 
 	go->sprite = App->modRender->addSprite(go);
 	go->sprite->order = 5;
 
 	if (type == 0)
-		go->sprite->texture = App->modResources->laser;
-	else if (type == 1)
-		go->sprite->texture = App->modResources->spacecraft1;
-	else if (type == 2)
-		go->sprite->texture = App->modResources->spacecraft2;
-	else if (type == 3)
-		go->sprite->texture = App->modResources->spacecraft3;
-
-	if (type != 0) 
 	{
-		
+		go->sprite->texture = App->modResources->laser;
+	}
+	else if (type == 1)
+	{
+		go->sprite->texture = App->modResources->spacecraft1;
+	}
+	else if (type == 2)
+	{
+		go->sprite->texture = App->modResources->spacecraft2;
+	}
+	else if (type == 3)
+	{
+		go->sprite->texture = App->modResources->spacecraft3;
+	}
+
+	if (type != 0)
+	{
 		go->collider = App->modCollision->addCollider(ColliderType::Player, go);
 		go->collider->isTrigger = true;
 		go->behaviour = new Spaceship;
 		go->behaviour->gameObject = go;
-
 	}
-	else if (type == 0) 
+	else
 	{
 		go->collider = App->modCollision->addCollider(ColliderType::Laser, go);
 		go->collider->isTrigger = true;

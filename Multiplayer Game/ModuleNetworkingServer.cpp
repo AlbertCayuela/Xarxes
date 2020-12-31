@@ -73,7 +73,7 @@ void ModuleNetworkingServer::onGui()
 					{
 						ImGui::Text(" - gameObject net id: (null)");
 					}
-					
+
 					ImGui::Separator();
 				}
 			}
@@ -83,7 +83,7 @@ void ModuleNetworkingServer::onGui()
 	}
 }
 
-void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, const sockaddr_in &fromAddress)
+void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream& packet, const sockaddr_in& fromAddress)
 {
 	if (state == ServerState::Listening)
 	{
@@ -94,7 +94,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 		ClientMessage message;
 		packet >> message;
 
-		ClientProxy *proxy = getClientProxy(fromAddress);
+		ClientProxy* proxy = getClientProxy(fromAddress);
 
 		if (message == ClientMessage::Hello)
 		{
@@ -117,7 +117,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 					proxy->clientId = nextClientId++;
 
 					// Create new network object
-					vec2 initialPosition = 500.0f * vec2{ Random.next() - 0.5f, Random.next() - 0.5f};
+					vec2 initialPosition = 500.0f * vec2{ Random.next() - 0.5f, Random.next() - 0.5f };
 					float initialAngle = 360.0f * Random.next();
 					proxy->gameObject = spawnPlayer(spaceshipType, initialPosition, initialAngle);
 
@@ -130,10 +130,10 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 					{
 						if (networkGameObjects[i]->id == proxy->gameObject->id)
 							continue;
-						proxy->replicationManager.Create(networkGameObjects[i]->networkId);
+						proxy->repM.Create(networkGameObjects[i]->networkId);
 					}
 				}
-				
+
 			}
 
 			if (proxy != nullptr)
@@ -146,7 +146,7 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 				welcomePacket << proxy->gameObject->networkId;
 				sendPacket(welcomePacket, fromAddress);
 
-				
+				LOG("Message received: hello - from player %s", proxy->name.c_str());
 			}
 			else
 			{
@@ -187,11 +187,13 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 		}
 
 		// TODO(you): UDP virtual connection lab session
-		else if (message == ClientMessage::Ping) {
+		else if (message == ClientMessage::Ping)
+		{
 			proxy->delManager.processAckdSequenceNumbers(packet);
-			if (proxy) {
-				proxy->lastPacket = 0.0f;
-			}
+		}
+		if (proxy)
+		{
+			proxy->lastPacketTime = Time.time;
 		}
 	}
 }
@@ -201,7 +203,7 @@ void ModuleNetworkingServer::onUpdate()
 	if (state == ServerState::Listening)
 	{
 		// Handle networked game object destructions
-		for (DelayedDestroyEntry &destroyEntry : netGameObjectsToDestroyWithDelay)
+		for (DelayedDestroyEntry& destroyEntry : netGameObjectsToDestroyWithDelay)
 		{
 			if (destroyEntry.object != nullptr)
 			{
@@ -214,16 +216,16 @@ void ModuleNetworkingServer::onUpdate()
 			}
 		}
 
-		for (ClientProxy &clientProxy : clientProxies)
+		for (ClientProxy& clientProxy : clientProxies)
 		{
-			
 			if (clientProxy.connected)
 			{
-				// TODO(you): UDP virtual connection lab session
-				if ((Time.time - clientProxy.lastPacket) >= DISCONNECT_TIMEOUT_SECONDS) {
+				// TODO(you): UDP virtual connection lab session (Disconnect client when too much time passes)
+				if ((Time.time - clientProxy.lastPacketTime) >= DISCONNECT_TIMEOUT_SECONDS) {
 					destroyClientProxy(&clientProxy);
 				}
-				if (lastPing >= PING_INTERVAL_SECONDS) {
+
+				if (lastPingTime >= PING_INTERVAL_SECONDS) {
 					OutputMemoryStream PingPacket;
 					PingPacket << PROTOCOL_ID;
 					PingPacket << ServerMessage::Ping;
@@ -236,38 +238,37 @@ void ModuleNetworkingServer::onUpdate()
 				}
 
 				// TODO(you): World state replication lab session
-				if (lastSentRep >= maxDelay) {
+				if (lastRepl >= replMaxTime) {
 					OutputMemoryStream packet;
 					packet << PROTOCOL_ID;
 					packet << ServerMessage::Replicate;
 					clientProxy.delManager.writeSequenceNumber(packet);
 
-					clientProxy.replicationManager.write(packet);
+					clientProxy.repM.Write(packet);
 					packet << clientProxy.nextExpectedInputSequenceNumber;
 					sendPacket(packet, clientProxy.address);
 				}
-				clientProxy.delManager.processTimedoutPackets();
+				clientProxy.delManager.processTimedOutPackets();
 
-				
 			}
 		}
 		// TODO(you): Reliability on top of UDP lab session
-		if (lastPing >= PING_INTERVAL_SECONDS) {
-			lastPing = 0.0f;
+		if (lastPingTime >= PING_INTERVAL_SECONDS) {
+			lastPingTime = 0.0f;
 		}
-		lastPing += Time.deltaTime;
+		lastPingTime += Time.deltaTime;
 
-		if (lastSentRep >= maxDelay) {
-			lastSentRep = 0.0f;
+		if (lastRepl >= replMaxTime) {
+			lastRepl = 0.0f;
 		}
-		lastSentRep += Time.deltaTime;
+		lastRepl += Time.deltaTime;
 	}
 }
 
-void ModuleNetworkingServer::onConnectionReset(const sockaddr_in & fromAddress)
+void ModuleNetworkingServer::onConnectionReset(const sockaddr_in& fromAddress)
 {
 	// Find the client proxy
-	ClientProxy *proxy = getClientProxy(fromAddress);
+	ClientProxy* proxy = getClientProxy(fromAddress);
 
 	if (proxy)
 	{
@@ -279,18 +280,18 @@ void ModuleNetworkingServer::onConnectionReset(const sockaddr_in & fromAddress)
 void ModuleNetworkingServer::onDisconnect()
 {
 	uint16 netGameObjectsCount;
-	GameObject *netGameObjects[MAX_NETWORK_OBJECTS];
+	GameObject* netGameObjects[MAX_NETWORK_OBJECTS];
 	App->modLinkingContext->getNetworkGameObjects(netGameObjects, &netGameObjectsCount);
 	for (uint32 i = 0; i < netGameObjectsCount; ++i)
 	{
 		NetworkDestroy(netGameObjects[i]);
 	}
 
-	for (ClientProxy &clientProxy : clientProxies)
+	for (ClientProxy& clientProxy : clientProxies)
 	{
 		destroyClientProxy(&clientProxy);
 	}
-	
+
 	nextClientId = 0;
 
 	state = ServerState::Stopped;
@@ -302,7 +303,7 @@ void ModuleNetworkingServer::onDisconnect()
 // Client proxies
 //////////////////////////////////////////////////////////////////////
 
-ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::createClientProxy()
+ModuleNetworkingServer::ClientProxy* ModuleNetworkingServer::createClientProxy()
 {
 	// If it does not exist, pick an empty entry
 	for (int i = 0; i < MAX_CLIENTS; ++i)
@@ -316,7 +317,7 @@ ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::createClientProxy(
 	return nullptr;
 }
 
-ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::getClientProxy(const sockaddr_in &clientAddress)
+ModuleNetworkingServer::ClientProxy* ModuleNetworkingServer::getClientProxy(const sockaddr_in& clientAddress)
 {
 	// Try to find the client
 	for (int i = 0; i < MAX_CLIENTS; ++i)
@@ -331,7 +332,7 @@ ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::getClientProxy(con
 	return nullptr;
 }
 
-void ModuleNetworkingServer::destroyClientProxy(ClientProxy *clientProxy)
+void ModuleNetworkingServer::destroyClientProxy(ClientProxy* clientProxy)
 {
 	// Destroy the object from all clients
 	if (IsValid(clientProxy->gameObject))
@@ -339,7 +340,7 @@ void ModuleNetworkingServer::destroyClientProxy(ClientProxy *clientProxy)
 		destroyNetworkObject(clientProxy->gameObject);
 	}
 
-    *clientProxy = {};
+	*clientProxy = {};
 }
 
 
@@ -347,10 +348,10 @@ void ModuleNetworkingServer::destroyClientProxy(ClientProxy *clientProxy)
 // Spawning
 //////////////////////////////////////////////////////////////////////
 
-GameObject * ModuleNetworkingServer::spawnPlayer(uint8 spaceshipType, vec2 initialPosition, float initialAngle)
+GameObject* ModuleNetworkingServer::spawnPlayer(uint8 spaceshipType, vec2 initialPosition, float initialAngle)
 {
 	// Create a new game object with the player properties
-	GameObject *gameObject = NetworkInstantiate();
+	GameObject* gameObject = NetworkInstantiate();
 	gameObject->position = initialPosition;
 	gameObject->size = { 100, 100 };
 	gameObject->angle = initialAngle;
@@ -373,7 +374,7 @@ GameObject * ModuleNetworkingServer::spawnPlayer(uint8 spaceshipType, vec2 initi
 	gameObject->collider->isTrigger = true; // NOTE(jesus): This object will receive onCollisionTriggered events
 
 	// Create behaviour
-	Spaceship * spaceshipBehaviour = App->modBehaviour->addSpaceship(gameObject);
+	Spaceship* spaceshipBehaviour = App->modBehaviour->addSpaceship(gameObject);
 	gameObject->behaviour = spaceshipBehaviour;
 	gameObject->behaviour->isServer = true;
 
@@ -385,10 +386,10 @@ GameObject * ModuleNetworkingServer::spawnPlayer(uint8 spaceshipType, vec2 initi
 // Update / destruction
 //////////////////////////////////////////////////////////////////////
 
-GameObject * ModuleNetworkingServer::instantiateNetworkObject()
+GameObject* ModuleNetworkingServer::instantiateNetworkObject()
 {
 	// Create an object into the server
-	GameObject * gameObject = Instantiate();
+	GameObject* gameObject = Instantiate();
 
 	// Register the object into the linking context
 	App->modLinkingContext->registerNetworkGameObject(gameObject);
@@ -399,14 +400,14 @@ GameObject * ModuleNetworkingServer::instantiateNetworkObject()
 		if (clientProxies[i].connected)
 		{
 			// TODO(you): World state replication lab session
-			clientProxies[i].replicationManager.Create(gameObject->networkId);
+			clientProxies[i].repM.Create(gameObject->networkId);
 		}
 	}
 
 	return gameObject;
 }
 
-void ModuleNetworkingServer::updateNetworkObject(GameObject * gameObject)
+void ModuleNetworkingServer::updateNetworkObject(GameObject* gameObject)
 {
 	// Notify all client proxies' replication manager to destroy the object remotely
 	for (int i = 0; i < MAX_CLIENTS; ++i)
@@ -414,31 +415,28 @@ void ModuleNetworkingServer::updateNetworkObject(GameObject * gameObject)
 		if (clientProxies[i].connected)
 		{
 			// TODO(you): World state replication lab session
-			clientProxies[i].replicationManager.Update(gameObject->networkId);
+			clientProxies[i].repM.Update(gameObject->networkId);
 		}
 	}
 }
 
-void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
+void ModuleNetworkingServer::destroyNetworkObject(GameObject* gameObject)
 {
-	// Notify all client proxies' replication manager to destroy the object remotely
 	for (int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		if (clientProxies[i].connected)
 		{
 			// TODO(you): World state replication lab session
-			clientProxies[i].replicationManager.destroy(gameObject->networkId);
+			clientProxies[i].repM.Destroy(gameObject->networkId);
 		}
 	}
 
-	// Assuming the message was received, unregister the network identity
 	App->modLinkingContext->unregisterNetworkGameObject(gameObject);
 
-	// Finally, destroy the object from the server
 	Destroy(gameObject);
 }
 
-void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject, float delaySeconds)
+void ModuleNetworkingServer::destroyNetworkObject(GameObject* gameObject, float delaySeconds)
 {
 	uint32 emptyIndex = MAX_GAME_OBJECTS;
 	for (uint32 i = 0; i < MAX_GAME_OBJECTS; ++i)
@@ -469,14 +467,14 @@ void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject, float
 // Global create / update / destruction of network game objects
 //////////////////////////////////////////////////////////////////////
 
-GameObject * NetworkInstantiate()
+GameObject* NetworkInstantiate()
 {
 	ASSERT(App->modNetServer->isConnected());
 
 	return App->modNetServer->instantiateNetworkObject();
 }
 
-void NetworkUpdate(GameObject * gameObject)
+void NetworkUpdate(GameObject* gameObject)
 {
 	ASSERT(App->modNetServer->isConnected());
 	ASSERT(gameObject->networkId != 0);
@@ -484,12 +482,12 @@ void NetworkUpdate(GameObject * gameObject)
 	App->modNetServer->updateNetworkObject(gameObject);
 }
 
-void NetworkDestroy(GameObject * gameObject)
+void NetworkDestroy(GameObject* gameObject)
 {
 	NetworkDestroy(gameObject, 0.0f);
 }
 
-void NetworkDestroy(GameObject * gameObject, float delaySeconds)
+void NetworkDestroy(GameObject* gameObject, float delaySeconds)
 {
 	ASSERT(App->modNetServer->isConnected());
 	ASSERT(gameObject->networkId != 0);

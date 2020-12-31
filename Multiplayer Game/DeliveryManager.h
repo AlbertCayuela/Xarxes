@@ -1,48 +1,41 @@
 #pragma once
-#include <list>
+#include <list> 
 
 class DeliveryManager;
-
-// TODO(you): Reliability on top of UDP lab session
-class DeliveryDelegate 
+class DeliveryDelegate
 {
 public:
-
-	//void OnDeliverySuccess(DeliveryManager* deliveryManager);
 	void OnDeliveryFailure(DeliveryManager* deliveryManager);
 };
 
-struct Delivery 
+struct Delivery
 {
-	
 	~Delivery();
 
-	uint32 sequenceNumber = 0;
+	uint32 sequenceNumber = 0u;
 	double dispatchTime = 0.0f;
 	DeliveryDelegate* delegate = nullptr;
 };
+
 
 class DeliveryManager
 {
 public:
 
 	Delivery* writeSequenceNumber(OutputMemoryStream& packet);
-
 	bool processSequenceNumber(const InputMemoryStream& packet);
-
 	bool hasSequenceNumbersPendingAck() const;
 	void writeSequenceNumbersPendingAck(OutputMemoryStream& packet);
-
 	void processAckdSequenceNumbers(const InputMemoryStream& packet);
-	void processTimedoutPackets();
-
+	void processTimedOutPackets();
 	void clear();
 
 private:
 
-	uint32 nextOutgoingSequenceNumber = 0u;
+	uint32 nextOutSequenceNumber = 0u;
 	std::list<Delivery*> pendingDeliveries;
 
-	uint32 nextExpectedSequenceNumber = 0u;
+	uint32 nextInSequenceNumber = 0u;
 	std::list<uint32> pendingAcknowledges;
+
 };

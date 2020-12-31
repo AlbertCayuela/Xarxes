@@ -1,18 +1,18 @@
 #include "ModuleNetworkingClient.h"
-
+//GOOD
 
 //////////////////////////////////////////////////////////////////////
 // ModuleNetworkingClient public methods
 //////////////////////////////////////////////////////////////////////
 
 
-void ModuleNetworkingClient::setServerAddress(const char * pServerAddress, uint16 pServerPort)
+void ModuleNetworkingClient::setServerAddress(const char* pServerAddress, uint16 pServerPort)
 {
 	serverAddressStr = pServerAddress;
 	serverPort = pServerPort;
 }
 
-void ModuleNetworkingClient::setPlayerInfo(const char * pPlayerName, uint8 pSpaceshipType)
+void ModuleNetworkingClient::setPlayerInfo(const char* pPlayerName, uint8 pSpaceshipType)
 {
 	playerName = pPlayerName;
 	spaceshipType = pSpaceshipType;
@@ -80,7 +80,7 @@ void ModuleNetworkingClient::onGui()
 			ImGui::Text(" - Network id: %u", networkId);
 
 			vec2 playerPosition = {};
-			GameObject *playerGameObject = App->modLinkingContext->getNetworkGameObject(networkId);
+			GameObject* playerGameObject = App->modLinkingContext->getNetworkGameObject(networkId);
 			if (playerGameObject != nullptr) {
 				playerPosition = playerGameObject->position;
 			}
@@ -100,9 +100,9 @@ void ModuleNetworkingClient::onGui()
 	}
 }
 
-void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, const sockaddr_in &fromAddress)
+void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream& packet, const sockaddr_in& fromAddress)
 {
-	// TODO(you): UDP virtual connection lab session
+	// TODO(you): UDP virtual connection lab session (Reset timer of packet recieved)
 	secLastPacket = 0.0f;
 	uint32 protoId;
 	packet >> protoId;
@@ -126,20 +126,23 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 			WLOG("ModuleNetworkingClient::onPacketReceived() - Unwelcome from server :-(");
 			disconnect();
 		}
+
 	}
 	else if (state == ClientState::Connected)
 	{
-		// TODO(you): World state replication lab session
-		// TODO(you): Reliability on top of UDP lab session
 		switch (message)
 		{
-		case ServerMessage::Ping: {
+		case ServerMessage::Ping: 
+		{
 			secLastPacket = 0.0f;
 			break;
 		}
-		case ServerMessage::Replicate: {
+		case ServerMessage::Replicate:
+		{
 			if (delManagerClient.processSequenceNumber(packet))
+			{
 				repClient.read(packet);
+			}
 			else
 			{
 				//Empty the packet if sequence number out of order
@@ -148,7 +151,7 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 			}
 			packet >> inputDataFront;
 			break;
-			}
+		}
 		}
 	}
 }
@@ -157,13 +160,13 @@ void ModuleNetworkingClient::onUpdate()
 {
 	if (state == ClientState::Stopped) return;
 
-
 	// TODO(you): UDP virtual connection lab session
 	secLastPacket += Time.deltaTime;
 	secLastPing += Time.deltaTime;
 
 	if (secLastPing >= PING_INTERVAL_SECONDS) {
-		
+
+
 		OutputMemoryStream packet;
 		packet << PROTOCOL_ID;
 		packet << ClientMessage::Ping;
@@ -193,7 +196,7 @@ void ModuleNetworkingClient::onUpdate()
 	}
 	else if (state == ClientState::Connected)
 	{
-		// TODO(you): UDP virtual connection lab session
+		// TODO(you): UDP virtual connection lab session (disconnect if the time exceeds)
 		if (secLastPacket >= DISCONNECT_TIMEOUT_SECONDS) {
 			disconnect();
 			secLastPacket = 0.0f;
@@ -204,7 +207,7 @@ void ModuleNetworkingClient::onUpdate()
 		{
 			// Pack current input
 			uint32 currentInputData = inputDataBack++;
-			InputPacketData &inputPacketData = inputData[currentInputData % ArrayCount(inputData)];
+			InputPacketData& inputPacketData = inputData[currentInputData % ArrayCount(inputData)];
 			inputPacketData.sequenceNumber = currentInputData;
 			inputPacketData.horizontalAxis = Input.horizontalAxis;
 			inputPacketData.verticalAxis = Input.verticalAxis;
@@ -226,7 +229,7 @@ void ModuleNetworkingClient::onUpdate()
 
 			for (uint32 i = inputDataFront; i < inputDataBack; ++i)
 			{
-				InputPacketData &inputPacketData = inputData[i % ArrayCount(inputData)];
+				InputPacketData& inputPacketData = inputData[i % ArrayCount(inputData)];
 				packet << inputPacketData.sequenceNumber;
 				packet << inputPacketData.horizontalAxis;
 				packet << inputPacketData.verticalAxis;
@@ -247,11 +250,10 @@ void ModuleNetworkingClient::onUpdate()
 		{
 			App->modRender->cameraPosition = playerGameObject->position;
 		}
-		
 	}
 }
 
-void ModuleNetworkingClient::onConnectionReset(const sockaddr_in & fromAddress)
+void ModuleNetworkingClient::onConnectionReset(const sockaddr_in& fromAddress)
 {
 	disconnect();
 }
